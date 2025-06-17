@@ -70,6 +70,20 @@ export default function Goals() {
     }
   };
 
+  const myHeaders = new Headers();
+  myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c3VhcmlvQGVqZW1wbG8uY29tIiwic2NvcGVzIjpbeyJhdXRob3JpdHkiOiJST0xFX0FETUlOIn1dLCJpc3MiOiJodHRwOi8vZGV2Z2xhbi5jb20iLCJpYXQiOjE3NTAxOTc0NjUsImV4cCI6MTc1MDIxNTQ2NX0.c2h7K_IwLiF5AGYlBJ8SGsvPVrSqqMjE8QMzIxQ4H98");
+
+  const requestOptions = {
+    method: "GET",
+    headers: myHeaders,
+    redirect: "follow"
+  };
+
+  fetch("http://198.211.105.95:8080/expenses_summary", requestOptions)
+    .then((response) => response.json())
+    .then((result) => console.log(result))
+    .catch((error) => console.error(error));
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
