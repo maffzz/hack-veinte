@@ -213,6 +213,14 @@ export default function Goals() {
             </tbody>
           </table>
         </div>
+
+        {/* Debug section - Raw API data */}
+        <div className="mt-8 bg-gray-800 text-white p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4">Debug: Raw API Data (Goals)</h3>
+          <pre className="text-sm overflow-auto">
+            {JSON.stringify(goals, null, 2)}
+          </pre>
+        </div>
       </div>
     </div>
   );

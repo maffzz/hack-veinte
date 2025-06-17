@@ -18,10 +18,12 @@ interface User {
 
 interface Expense {
   id: number;
-  amount: number;
-  description: string;
   date: string;
-  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+  };
+  amount: number;
 }
 
 interface ExpenseSummary {
@@ -153,9 +155,9 @@ export const expensesService = {
     }
   },
 
-  getDetail: async (year: number, month: number, categoryId: number): Promise<ApiResponse<Expense[]>> => {
+  getDetail: async (year: number, month: number, categoryId: number): Promise<Expense[]> => {
     try {
-      const response = await api.get<ApiResponse<Expense[]>>(`/expenses/detail?year=${year}&month=${month}&categoryId=${categoryId}`);
+      const response = await api.get<Expense[]>(`/expenses/detail?year=${year}&month=${month}&categoryId=${categoryId}`);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -165,9 +167,9 @@ export const expensesService = {
     }
   },
 
-  createExpense: async (expense: Omit<Expense, 'id'>): Promise<ApiResponse<Expense>> => {
+  createExpense: async (expense: Omit<Expense, 'id' | 'category'> & { categoryId: number }): Promise<Expense> => {
     try {
-      const response = await api.post<ApiResponse<Expense>>('/expenses', expense);
+      const response = await api.post<Expense>('/expenses', expense);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
