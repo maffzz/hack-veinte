@@ -10,6 +10,12 @@ interface LoginCredentials {
 
 interface RegisterCredentials extends LoginCredentials {}
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
 interface Expense {
   id: number;
   amount: number;
@@ -31,19 +37,20 @@ interface ExpenseCategory {
 
 interface Goal {
   id: number;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string;
+  amount: number;
+  month: number;
+  year: number;
+}
+
+interface ApiResponse<T> {
+  status: number;
+  message: string;
+  result: T;
 }
 
 interface LoginResponse {
-  status: number;
-  message: string;
-  result: {
-    token: string;
-    username: string;
-  }
+  token: string;
+  username: string;
 }
 
 // Create axios instance with default config
@@ -78,9 +85,9 @@ api.interceptors.response.use(
 
 // Authentication services
 export const authService = {
-  register: async (credentials: RegisterCredentials) => {
+  register: async (credentials: RegisterCredentials): Promise<ApiResponse<LoginResponse>> => {
     try {
-      const response = await api.post('/authentication/register', credentials);
+      const response = await api.post<ApiResponse<LoginResponse>>('/authentication/register', credentials);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -90,9 +97,9 @@ export const authService = {
     }
   },
 
-  login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+  login: async (credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> => {
     try {
-      const response = await api.post<LoginResponse>('/authentication/login', credentials);
+      const response = await api.post<ApiResponse<LoginResponse>>('/authentication/login', credentials);
       if (response.data.result?.token) {
         localStorage.setItem('token', response.data.result.token);
         localStorage.setItem('username', response.data.result.username);
@@ -122,9 +129,9 @@ export const authService = {
 
 // Expenses services
 export const expensesService = {
-  getSummary: async () => {
+  getSummary: async (): Promise<ApiResponse<ExpenseSummary[]>> => {
     try {
-      const response = await api.get('/expenses_summary');
+      const response = await api.get<ApiResponse<ExpenseSummary[]>>('/expenses_summary');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -133,51 +140,92 @@ export const expensesService = {
       throw error;
     }
   },
+
+  getCategories: async (): Promise<ApiResponse<ExpenseCategory[]>> => {
+    try {
+      const response = await api.get<ApiResponse<ExpenseCategory[]>>('/expense_categories');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch expense categories');
+      }
+      throw error;
+    }
+  },
+
+  getDetail: async (year: number, month: number, categoryId: number): Promise<ApiResponse<Expense[]>> => {
+    try {
+      const response = await api.get<ApiResponse<Expense[]>>(`/expenses/detail?year=${year}&month=${month}&categoryId=${categoryId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch expense details');
+      }
+      throw error;
+    }
+  },
+
+  createExpense: async (expense: Omit<Expense, 'id'>): Promise<ApiResponse<Expense>> => {
+    try {
+      const response = await api.post<ApiResponse<Expense>>('/expenses', expense);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to create expense');
+      }
+      throw error;
+    }
+  },
+
+  deleteExpense: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/expenses/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to delete expense');
+      }
+      throw error;
+    }
+  }
 };
 
-export const expenseService = {
-  getSummary: async (year: number, month: number): Promise<ExpenseSummary[]> => {
-    const response = await api.get(`/expenses_summary?year=${year}&month=${month}`);
-    return response.data.data;
+// Goals services
+export const goalsService = {
+  getGoals: async (): Promise<ApiResponse<Goal[]>> => {
+    try {
+      const response = await api.get<ApiResponse<Goal[]>>('/goals');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch goals');
+      }
+      throw error;
+    }
   },
 
-  getDetail: async (year: number, month: number, categoryId: number): Promise<Expense[]> => {
-    const response = await api.get(`/expenses/detail?year=${year}&month=${month}&categoryId=${categoryId}`);
-    return response.data.data;
+  createGoal: async (goal: Omit<Goal, 'id'>): Promise<ApiResponse<Goal>> => {
+    try {
+      const response = await api.post<ApiResponse<Goal>>('/goals', goal);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to create goal');
+      }
+      throw error;
+    }
   },
 
-  create: async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
-    const response = await api.post('/expenses', expense);
-    return response.data.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`/expenses/${id}`);
-  },
-};
-
-export const categoryService = {
-  getAll: async (): Promise<ExpenseCategory[]> => {
-    const response = await api.get('/expenses_category');
-    return response.data.data;
-  },
-};
-
-export const goalService = {
-  getAll: async (): Promise<Goal[]> => {
-    const response = await api.get('/goals');
-    return response.data.data;
-  },
-
-  create: async (goal: Omit<Goal, 'id'>): Promise<Goal> => {
-    const response = await api.post('/goals', goal);
-    return response.data.data;
-  },
-
-  update: async (id: number, goal: Partial<Goal>): Promise<Goal> => {
-    const response = await api.patch(`/goals/${id}`, goal);
-    return response.data.data;
-  },
+  updateGoal: async (id: number, goal: Partial<Goal>): Promise<ApiResponse<Goal>> => {
+    try {
+      const response = await api.put<ApiResponse<Goal>>(`/goals/${id}`, goal);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to update goal');
+      }
+      throw error;
+    }
+  }
 };
 
 export default api; 

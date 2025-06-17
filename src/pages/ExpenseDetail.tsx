@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { expenseService, categoryService } from '../services/api';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { expensesService } from '../services/api';
 import type { Expense, ExpenseCategory } from '../types';
 
 export default function ExpenseDetail() {
   const { categoryId } = useParams<{ categoryId: string }>();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,11 +24,11 @@ export default function ExpenseDetail() {
         setLoading(true);
         setError('');
         const [expensesData, categoriesData] = await Promise.all([
-          expenseService.getDetail(year, month, Number(categoryId)),
-          categoryService.getAll(),
+          expensesService.getDetail(year, month, Number(categoryId)),
+          expensesService.getCategories(),
         ]);
-        setExpenses(expensesData);
-        setCategories(categoriesData);
+        setExpenses(expensesData.result);
+        setCategories(categoriesData.result);
       } catch (err) {
         setError('Failed to load expenses. Please try again.');
       } finally {
@@ -44,13 +43,13 @@ export default function ExpenseDetail() {
     e.preventDefault();
     try {
       setError('');
-      const expense = await expenseService.create({
+      const response = await expensesService.createExpense({
         amount: Number(newExpense.amount),
         description: newExpense.description,
         date: new Date().toISOString(),
         categoryId: Number(categoryId),
       });
-      setExpenses([...expenses, expense]);
+      setExpenses([...expenses, response.result]);
       setNewExpense({ amount: '', description: '' });
     } catch (err) {
       setError('Failed to add expense. Please try again.');
@@ -64,7 +63,7 @@ export default function ExpenseDetail() {
 
     try {
       setError('');
-      await expenseService.delete(id);
+      await expensesService.deleteExpense(id);
       setExpenses(expenses.filter((expense) => expense.id !== id));
     } catch (err) {
       setError('Failed to delete expense. Please try again.');

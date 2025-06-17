@@ -7,14 +7,28 @@ import ExpenseDetail from './pages/ExpenseDetail';
 import Goals from './pages/Goals';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -22,13 +36,27 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route
-            path="/"
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
             element={
               <PrivateRoute>
                 <Dashboard />
@@ -36,7 +64,7 @@ function App() {
             }
           />
           <Route
-            path="/expenses/:categoryId"
+            path="/expenses/:year/:month/:categoryId"
             element={
               <PrivateRoute>
                 <ExpenseDetail />
@@ -51,9 +79,10 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { expenseService } from '../services/api';
+import { expensesService } from '../services/api';
 import type { ExpenseSummary } from '../types';
 
 export default function Dashboard() {
@@ -9,17 +9,14 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState<ExpenseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
         setLoading(true);
         setError('');
-        const year = selectedDate.getFullYear();
-        const month = selectedDate.getMonth() + 1;
-        const data = await expenseService.getSummary(year, month);
-        setExpenses(data);
+        const response = await expensesService.getSummary();
+        setExpenses(response.result);
       } catch (err) {
         setError('Failed to load expenses. Please try again.');
       } finally {
@@ -28,34 +25,9 @@ export default function Dashboard() {
     };
 
     fetchExpenses();
-  }, [selectedDate]);
-
-  const handleDateChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const [year, month] = event.target.value.split('-');
-    setSelectedDate(new Date(Number(year), Number(month) - 1));
-  };
+  }, []);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.total, 0);
-
-  const generateDateOptions = () => {
-    const options = [];
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-
-    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
-      for (let month = 0; month < 12; month++) {
-        if (year === currentYear && month > currentMonth) continue;
-        const date = new Date(year, month);
-        options.push(
-          <option key={`${year}-${month + 1}`} value={`${year}-${month + 1}`}>
-            {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </option>
-        );
-      }
-    }
-    return options;
-  };
 
   if (loading) {
     return (
@@ -71,16 +43,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Expense Summary</h1>
-            <select
-              value={`${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}`}
-              onChange={handleDateChange}
-              className="mt-2 block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              {generateDateOptions()}
-            </select>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Expense Summary</h1>
           <button
             onClick={logout}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -104,9 +67,8 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {expenses.map((expense) => (
-            <Link
+            <div
               key={expense.categoryId}
-              to={`/expenses/${expense.categoryId}?year=${selectedDate.getFullYear()}&month=${selectedDate.getMonth() + 1}`}
               className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow duration-200"
             >
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -115,10 +77,7 @@ export default function Dashboard() {
               <p className="text-2xl font-bold text-indigo-600">
                 S/ {expense.total.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Click to view details
-              </p>
-            </Link>
+            </div>
           ))}
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { goalService } from '../services/api';
+import { goalsService } from '../services/api';
 import type { Goal } from '../types';
 
 export default function Goals() {
@@ -18,8 +18,8 @@ export default function Goals() {
       try {
         setLoading(true);
         setError('');
-        const data = await goalService.getAll();
-        setGoals(data);
+        const response = await goalsService.getGoals();
+        setGoals(response.result);
       } catch (err) {
         setError('Failed to load goals. Please try again.');
       } finally {
@@ -39,12 +39,12 @@ export default function Goals() {
 
     try {
       setError('');
-      const goal = await goalService.create({
+      const response = await goalsService.createGoal({
         amount: Number(newGoal.amount),
         month: newGoal.month,
         year: newGoal.year,
       });
-      setGoals([...goals, goal]);
+      setGoals([...goals, response.result]);
       setNewGoal({ ...newGoal, amount: '' });
     } catch (err) {
       setError('Failed to add goal. Please try again.');
@@ -63,8 +63,8 @@ export default function Goals() {
 
     try {
       setError('');
-      const updatedGoal = await goalService.update(id, { amount });
-      setGoals(goals.map((goal) => (goal.id === id ? updatedGoal : goal)));
+      const response = await goalsService.updateGoal(id, { amount });
+      setGoals(goals.map((goal) => (goal.id === id ? response.result : goal)));
     } catch (err) {
       setError('Failed to update goal. Please try again.');
     }

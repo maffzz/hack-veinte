@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     passwd: ''
   });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -22,15 +29,16 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
+    setLoading(true);
 
     try {
-      const response = await authService.login(formData);
-      setSuccess('Login successful!');
-      console.log('Login response:', response);
+      await login(formData);
+      // La redirección se maneja en el useEffect cuando isAuthenticated cambia
     } catch (err) {
       setError('Invalid email or password');
       console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,6 +63,7 @@ const Login: React.FC = () => {
                 placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
             <div>
@@ -68,6 +77,7 @@ const Login: React.FC = () => {
                 placeholder="Password"
                 value={formData.passwd}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
           </div>
@@ -78,18 +88,13 @@ const Login: React.FC = () => {
             </div>
           )}
 
-          {success && (
-            <div className="text-green-500 text-sm text-center">
-              {success}
-            </div>
-          )}
-
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 
