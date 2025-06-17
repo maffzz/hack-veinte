@@ -16,10 +16,12 @@ export default function Goals() {
   useEffect(() => {
     const fetchGoals = async () => {
       try {
+        setLoading(true);
+        setError('');
         const data = await goalService.getAll();
         setGoals(data);
       } catch (err) {
-        setError('Failed to load goals');
+        setError('Failed to load goals. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -30,7 +32,13 @@ export default function Goals() {
 
   const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (Number(newGoal.amount) <= 0) {
+      setError('Amount must be greater than 0');
+      return;
+    }
+
     try {
+      setError('');
       const goal = await goalService.create({
         amount: Number(newGoal.amount),
         month: newGoal.month,
@@ -39,16 +47,26 @@ export default function Goals() {
       setGoals([...goals, goal]);
       setNewGoal({ ...newGoal, amount: '' });
     } catch (err) {
-      setError('Failed to add goal');
+      setError('Failed to add goal. Please try again.');
     }
   };
 
-  const handleUpdateGoal = async (id: number, amount: number) => {
+  const handleUpdateGoal = async (id: number, currentAmount: number) => {
+    const newAmount = prompt('Enter new amount:', currentAmount.toString());
+    if (newAmount === null) return;
+
+    const amount = Number(newAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setError('Please enter a valid amount greater than 0');
+      return;
+    }
+
     try {
+      setError('');
       const updatedGoal = await goalService.update(id, { amount });
       setGoals(goals.map((goal) => (goal.id === id ? updatedGoal : goal)));
     } catch (err) {
-      setError('Failed to update goal');
+      setError('Failed to update goal. Please try again.');
     }
   };
 
@@ -92,6 +110,8 @@ export default function Goals() {
                 type="number"
                 id="amount"
                 required
+                min="0.01"
+                step="0.01"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 value={newGoal.amount}
                 onChange={(e) => setNewGoal({ ...newGoal, amount: e.target.value })}
@@ -161,32 +181,35 @@ export default function Goals() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {goals.map((goal) => (
-                <tr key={goal.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(2000, goal.month - 1).toLocaleString('default', { month: 'long' })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {goal.year}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    S/ {goal.amount.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => {
-                        const newAmount = prompt('Enter new amount:', goal.amount.toString());
-                        if (newAmount !== null) {
-                          handleUpdateGoal(goal.id, Number(newAmount));
-                        }
-                      }}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Edit
-                    </button>
+              {goals.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                    No goals set yet
                   </td>
                 </tr>
-              ))}
+              ) : (
+                goals.map((goal) => (
+                  <tr key={goal.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(2000, goal.month - 1).toLocaleString('default', { month: 'long' })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {goal.year}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      S/ {goal.amount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleUpdateGoal(goal.id, goal.amount)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

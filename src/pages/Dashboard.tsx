@@ -9,26 +9,53 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState<ExpenseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [currentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1;
+        setLoading(true);
+        setError('');
+        const year = selectedDate.getFullYear();
+        const month = selectedDate.getMonth() + 1;
         const data = await expenseService.getSummary(year, month);
         setExpenses(data);
       } catch (err) {
-        setError('Failed to load expenses');
+        setError('Failed to load expenses. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchExpenses();
-  }, [currentDate]);
+  }, [selectedDate]);
+
+  const handleDateChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const [year, month] = event.target.value.split('-');
+    setSelectedDate(new Date(Number(year), Number(month) - 1));
+  };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.total, 0);
+
+  const generateDateOptions = () => {
+    const options = [];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
+      for (let month = 0; month < 12; month++) {
+        if (year === currentYear && month > currentMonth) continue;
+        const date = new Date(year, month);
+        options.push(
+          <option key={`${year}-${month + 1}`} value={`${year}-${month + 1}`}>
+            {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </option>
+        );
+      }
+    }
+    return options;
+  };
 
   if (loading) {
     return (
@@ -44,9 +71,16 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Expense Summary - {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Expense Summary</h1>
+            <select
+              value={`${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}`}
+              onChange={handleDateChange}
+              className="mt-2 block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+              {generateDateOptions()}
+            </select>
+          </div>
           <button
             onClick={logout}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -72,7 +106,7 @@ export default function Dashboard() {
           {expenses.map((expense) => (
             <Link
               key={expense.categoryId}
-              to={`/expenses/${expense.categoryId}`}
+              to={`/expenses/${expense.categoryId}?year=${selectedDate.getFullYear()}&month=${selectedDate.getMonth() + 1}`}
               className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow duration-200"
             >
               <h3 className="text-lg font-medium text-gray-900 mb-2">
