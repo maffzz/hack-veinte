@@ -1,24 +1,36 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import type { LoginCredentials } from '../types';
+import { authService } from '../services/api';
 
-export default function Login() {
+const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [error, setError] = useState('');
-  const [credentials, setCredentials] = useState<LoginCredentials>({
+  const [formData, setFormData] = useState({
     email: '',
-    passwd: '',
+    passwd: ''
   });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
     try {
-      await login(credentials);
-      navigate('/');
+      const response = await authService.login(formData);
+      setSuccess('Login successful!');
+      console.log('Login response:', response);
     } catch (err) {
       setError('Invalid email or password');
+      console.error('Login error:', err);
     }
   };
 
@@ -31,16 +43,9 @@ export default function Login() {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
                 id="email"
                 name="email"
@@ -48,30 +53,36 @@ export default function Login() {
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={credentials.email}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, email: e.target.value })
-                }
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+              <label htmlFor="passwd" className="sr-only">Password</label>
               <input
-                id="password"
-                name="password"
+                id="passwd"
+                name="passwd"
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
-                value={credentials.passwd}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, passwd: e.target.value })
-                }
+                value={formData.passwd}
+                onChange={handleChange}
               />
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-green-500 text-sm text-center">
+              {success}
+            </div>
+          )}
 
           <div>
             <button
@@ -94,4 +105,6 @@ export default function Login() {
       </div>
     </div>
   );
-} 
+};
+
+export default Login; 

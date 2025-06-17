@@ -1,28 +1,34 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import type { RegisterCredentials } from '../types';
+import React, { useState } from 'react';
+import { authService } from '../services/api';
 
-export default function Register() {
-  const navigate = useNavigate();
-  const { register } = useAuth();
-  const [error, setError] = useState('');
-  const [credentials, setCredentials] = useState<RegisterCredentials>({
+const Register: React.FC = () => {
+  const [formData, setFormData] = useState({
     email: '',
-    passwd: '',
+    passwd: ''
   });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (credentials.passwd.length < 12) {
-      setError('Password must be at least 12 characters long');
-      return;
-    }
+    setError(null);
+    setSuccess(null);
+
     try {
-      await register(credentials);
-      navigate('/');
+      const response = await authService.register(formData);
+      setSuccess('Registration successful!');
+      console.log('Registration response:', response);
     } catch (err) {
-      setError('Email already exists or invalid credentials');
+      setError('Registration failed. Please try again.');
+      console.error('Registration error:', err);
     }
   };
 
@@ -35,16 +41,9 @@ export default function Register() {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
                 id="email"
                 name="email"
@@ -52,30 +51,36 @@ export default function Register() {
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
-                value={credentials.email}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, email: e.target.value })
-                }
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+              <label htmlFor="passwd" className="sr-only">Password</label>
               <input
-                id="password"
-                name="password"
+                id="passwd"
+                name="passwd"
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password (min. 12 characters)"
-                value={credentials.passwd}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, passwd: e.target.value })
-                }
+                placeholder="Password"
+                value={formData.passwd}
+                onChange={handleChange}
               />
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-green-500 text-sm text-center">
+              {success}
+            </div>
+          )}
 
           <div>
             <button
@@ -85,17 +90,10 @@ export default function Register() {
               Register
             </button>
           </div>
-
-          <div className="text-sm text-center">
-            <Link
-              to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Already have an account? Sign in
-            </Link>
-          </div>
         </form>
       </div>
     </div>
   );
-} 
+};
+
+export default Register; 

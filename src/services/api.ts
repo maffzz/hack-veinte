@@ -1,13 +1,60 @@
 import axios from 'axios';
-import type { LoginCredentials, RegisterCredentials, User, Expense, ExpenseCategory, ExpenseSummary, Goal, ApiResponse } from '../types';
 
-const API_URL = 'http://198.211.105.95:8080';
+const API_BASE_URL = 'http://198.211.105.95:8080';
 
+// Types
+interface LoginCredentials {
+  email: string;
+  passwd: string;
+}
+
+interface RegisterCredentials extends LoginCredentials {}
+
+interface Expense {
+  id: number;
+  amount: number;
+  description: string;
+  date: string;
+  categoryId: number;
+}
+
+interface ExpenseSummary {
+  categoryId: number;
+  categoryName: string;
+  total: number;
+}
+
+interface ExpenseCategory {
+  id: number;
+  name: string;
+}
+
+interface Goal {
+  id: number;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+}
+
+interface LoginResponse {
+  status: number;
+  message: string;
+  result: {
+    token: string;
+    username: string;
+  }
+}
+
+// Create axios instance with default config
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Add token to requests if it exists
+// Add request interceptor to add auth token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -29,15 +76,62 @@ api.interceptors.response.use(
   }
 );
 
+// Authentication services
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<ApiResponse<User>> => {
-    const response = await api.post('/authentication/login', credentials);
-    return response.data;
+  register: async (credentials: RegisterCredentials) => {
+    try {
+      const response = await api.post('/authentication/register', credentials);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Registration failed');
+      }
+      throw error;
+    }
   },
 
-  register: async (credentials: RegisterCredentials): Promise<ApiResponse<User>> => {
-    const response = await api.post('/authentication/register', credentials);
-    return response.data;
+  login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+    try {
+      const response = await api.post<LoginResponse>('/authentication/login', credentials);
+      if (response.data.result?.token) {
+        localStorage.setItem('token', response.data.result.token);
+        localStorage.setItem('username', response.data.result.username);
+      }
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Login failed');
+      }
+      throw error;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+  },
+
+  getToken: () => {
+    return localStorage.getItem('token');
+  },
+
+  getUsername: () => {
+    return localStorage.getItem('username');
+  }
+};
+
+// Expenses services
+export const expensesService = {
+  getSummary: async () => {
+    try {
+      const response = await api.get('/expenses_summary');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to fetch expenses summary');
+      }
+      throw error;
+    }
   },
 };
 
@@ -84,4 +178,6 @@ export const goalService = {
     const response = await api.patch(`/goals/${id}`, goal);
     return response.data.data;
   },
-}; 
+};
+
+export default api; 
