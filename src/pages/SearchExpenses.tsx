@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { expensesService } from '../services/api';
+import { Link } from 'react-router-dom';
 
 interface ExpenseSearch {
   id: number;
@@ -117,8 +118,16 @@ export default function SearchExpenses() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+      <div className="max-w-3xl w-full mx-auto">
+        <div className="mb-6 flex justify-end">
+          <Link
+            to="/dashboard"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700 transition"
+          >
+            Volver al Dashboard
+          </Link>
+        </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Buscar Gastos</h1>
         {/* Formulario para registrar gasto */}
         <form onSubmit={handleAddExpense} className="bg-white shadow rounded-lg p-6 mb-8">
