@@ -125,32 +125,21 @@ export default function Dashboard() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Gastos por Categoría</h2>
             <div className="flex gap-4">
-              <Link
-                to="/goals"
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Ver Metas de Ahorro
-              </Link>
+
               <Link
                 to="/filtros-gastos"
                 className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
               >
                 Filtros de Gastos
               </Link>
-              <Link
-                to="/expenses"
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
-                Ver Todos los Gastos
-              </Link>
+
             </div>
           </div>
           <div className="space-y-4">
             {Object.entries(categoryTotals).map(([category, total]) => (
-              <Link
+              <div
                 key={category}
-                to={`/expense-detail/${category}?year=${new Date().getFullYear()}&month=${new Date().getMonth() + 1}`}
-                className="block bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors"
+                className="block bg-gray-50 p-4 rounded-lg"
               >
                 <div className="flex justify-between items-center">
                   <div>
@@ -165,7 +154,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
