@@ -78,8 +78,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="max-w-7xl w-full mx-auto">
           <div className="text-center text-gray-600">Loading expenses data...</div>
         </div>
       </div>
@@ -87,8 +87,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="max-w-7xl w-full mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Expense Summary</h1>
           <button
