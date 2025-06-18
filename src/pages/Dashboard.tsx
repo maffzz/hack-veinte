@@ -15,15 +15,13 @@ interface Expense {
 }
 
 interface CategorySummary {
-  categoryId: number;
-  categoryName: string;
-  total: number;
+  [key: string]: number;
 }
 
 export default function Dashboard() {
   const { logout } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [categoryTotals, setCategoryTotals] = useState<CategorySummary[]>([]);
+  const [categoryTotals, setCategoryTotals] = useState<CategorySummary>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -50,23 +48,14 @@ export default function Dashboard() {
             expense => expense.year === currentYear && expense.month === currentMonth
           );
 
-          const totals = monthlyExpenses.reduce((acc: CategorySummary[], expense) => {
-            const existingCategory = acc.find(
-              cat => cat.categoryId === expense.expenseCategory.id
-            );
-
-            if (existingCategory) {
-              existingCategory.total += expense.amount;
-            } else {
-              acc.push({
-                categoryId: expense.expenseCategory.id,
-                categoryName: expense.expenseCategory.name,
-                total: expense.amount
-              });
+          const totals = monthlyExpenses.reduce((acc: CategorySummary, expense) => {
+            const categoryName = expense.expenseCategory.name;
+            if (!acc[categoryName]) {
+              acc[categoryName] = 0;
             }
-
+            acc[categoryName] += expense.amount;
             return acc;
-          }, []);
+          }, {});
 
           setCategoryTotals(totals);
         } else {
@@ -85,7 +74,7 @@ export default function Dashboard() {
   }, []);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const monthlyTotal = categoryTotals.reduce((sum, category) => sum + category.total, 0);
+  const monthlyTotal = Object.values(categoryTotals).reduce((sum, total) => sum + total, 0);
 
   if (loading) {
     return (
@@ -133,38 +122,52 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Gastos por Categoría (Mes Actual)</h2>
-          {categoryTotals.length === 0 ? (
-            <div className="text-center text-gray-500 py-4">No hay gastos este mes</div>
-          ) : (
-            <div className="space-y-4">
-              {categoryTotals.map((category) => (
-                <div key={category.categoryId} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {category.categoryName}
-                      </h3>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-indigo-600">
-                        S/ {category.total.toFixed(2)}
-                      </p>
-                    </div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Gastos por Categoría</h2>
+            <div className="flex gap-4">
+              <Link
+                to="/goals"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Ver Metas de Ahorro
+              </Link>
+              <Link
+                to="/filtros-gastos"
+                className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
+              >
+                Filtros de Gastos
+              </Link>
+              <Link
+                to="/expenses"
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Ver Todos los Gastos
+              </Link>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {Object.entries(categoryTotals).map(([category, total]) => (
+              <Link
+                key={category}
+                to={`/expense-detail/${category}?year=${new Date().getFullYear()}&month=${new Date().getMonth() + 1}`}
+                className="block bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">{category}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-semibold text-indigo-600">
+                      S/ {total.toFixed(2)}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <Link
-            to="/goals"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            View Savings Goals
-          </Link>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>

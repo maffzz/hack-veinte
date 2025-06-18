@@ -3,9 +3,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Login } from './components/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import ExpenseDetail from './pages/ExpenseDetail';
 import Goals from './pages/Goals';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import SearchExpenses from './pages/SearchExpenses';
 
 function App() {
   return (
@@ -23,14 +23,6 @@ function App() {
             }
           />
           <Route
-            path="/expenses/:year/:month/:categoryId"
-            element={
-              <ProtectedRoute>
-                <ExpenseDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/goals"
             element={
               <ProtectedRoute>
@@ -38,6 +30,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/filtros-gastos" element={<SearchExpenses />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
