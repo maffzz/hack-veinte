@@ -4,7 +4,8 @@ import { authService } from '../services/api';
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
-    passwd: ''
+    passwd: '',
+    username: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -68,6 +69,19 @@ const Register: React.FC = () => {
                 onChange={handleChange}
               />
             </div>
+            <div>
+              <label htmlFor="username" className="sr-only">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Username"
+                value={formData.username}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
           {error && (
@@ -96,4 +110,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;

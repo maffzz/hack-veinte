@@ -3,7 +3,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Login } from './components/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Goals from './pages/Goals';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import SearchExpenses from './pages/SearchExpenses';
 
@@ -19,14 +18,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/goals"
-            element={
-              <ProtectedRoute>
-                <Goals />
               </ProtectedRoute>
             }
           />
