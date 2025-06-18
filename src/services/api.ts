@@ -1,36 +1,21 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://198.211.105.95:8080';
+const API_URL = 'http://198.211.105.95:8080';
 
 // Types
-interface LoginCredentials {
-  email: string;
-  passwd: string;
-}
-
-interface RegisterCredentials extends LoginCredentials {}
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-}
 
 interface Expense {
   id: number;
-  date: string;
-  category: {
+  expenseCategory: {
     id: number;
     name: string;
   };
+  year: number;
+  month: number;
   amount: number;
 }
 
-interface ExpenseSummary {
-  categoryId: number;
-  categoryName: string;
-  total: number;
-}
+
 
 interface ExpenseCategory {
   id: number;
@@ -55,30 +40,35 @@ interface LoginResponse {
   username: string;
 }
 
-// Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add request interceptor to add auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add a request interceptor to add the token to requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Clear token and redirect to login
       localStorage.removeItem('token');
-      localStorage.removeItem('email');
+      localStorage.removeItem('username');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -87,55 +77,46 @@ api.interceptors.response.use(
 
 // Authentication services
 export const authService = {
-  register: async (credentials: RegisterCredentials): Promise<ApiResponse<LoginResponse>> => {
-    try {
-      const response = await api.post<ApiResponse<LoginResponse>>('/authentication/register', credentials);
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Registration failed');
-      }
-      throw error;
+  async login(credentials: { email: string; passwd: string }) {
+    const response = await api.post<ApiResponse<LoginResponse>>('/authentication/login', credentials);
+    if (response.data.result?.token) {
+      localStorage.setItem('token', response.data.result.token);
+      localStorage.setItem('username', response.data.result.username);
     }
+    return response.data;
   },
 
-  login: async (credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> => {
-    try {
-      const response = await api.post<ApiResponse<LoginResponse>>('/authentication/login', credentials);
-      if (response.data.result?.token) {
-        localStorage.setItem('token', response.data.result.token);
-        localStorage.setItem('username', response.data.result.username);
-      }
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Login failed');
-      }
-      throw error;
+  async register(credentials: { email: string; passwd: string; username: string }) {
+    const response = await api.post<ApiResponse<LoginResponse>>('/authentication/register', credentials);
+    if (response.data.result?.token) {
+      localStorage.setItem('token', response.data.result.token);
+      localStorage.setItem('username', response.data.result.username);
     }
+    return response.data;
   },
 
-  logout: () => {
+  logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
   },
 
-  getToken: () => {
+  getToken() {
     return localStorage.getItem('token');
   },
 
-  getUsername: () => {
+  getUsername() {
     return localStorage.getItem('username');
   }
 };
 
 // Expenses services
 export const expensesService = {
-  getSummary: async (): Promise<ApiResponse<ExpenseSummary[]>> => {
+  getSummary: async (): Promise<Expense[]> => {
     try {
-      const response = await api.get<ApiResponse<ExpenseSummary[]>>('/expenses_summary');
+      const response = await api.get<Expense[]>('/expenses_summary');
       return response.data;
     } catch (error) {
+      console.error('Error in getSummary:', error);
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.message || 'Failed to fetch expenses summary');
       }
@@ -145,7 +126,7 @@ export const expensesService = {
 
   getCategories: async (): Promise<ApiResponse<ExpenseCategory[]>> => {
     try {
-      const response = await api.get<ApiResponse<ExpenseCategory[]>>('/expense_categories');
+      const response = await api.get<ApiResponse<ExpenseCategory[]>>('/expenses_category');
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -230,4 +211,4 @@ export const goalsService = {
   }
 };
 
-export default api; 
+export default api;
