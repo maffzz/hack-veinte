@@ -6,4 +6,13 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js',
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://198.211.105.95:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })

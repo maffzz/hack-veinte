@@ -34,6 +34,7 @@ export default function Dashboard() {
         setError('');
         console.log('🔄 Iniciando petición a la API...');
         const response = await expensesService.getSummary();
+
         console.log('📦 Respuesta de la API:', response);
         
         if (response && Array.isArray(response)) {
@@ -84,9 +85,6 @@ export default function Dashboard() {
     fetchExpenses();
   }, []);
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const monthlyTotal = categoryTotals.reduce((sum, category) => sum + category.total, 0);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
@@ -96,6 +94,11 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // Calculate total expenses safely
+  const totalExpenses = expenses && expenses.length > 0 
+    ? expenses.reduce((sum, expense) => sum + expense.total, 0)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -158,7 +161,21 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="mt-8">
+        {/* Debug section - Raw API data */}
+        <div className="mt-8 bg-gray-800 text-white p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4">Debug: Raw API Data (Expenses Summary)</h3>
+          <pre className="text-sm overflow-auto">
+            {JSON.stringify(expenses, null, 2)}
+          </pre>
+        </div>
+
+        <div className="mt-8 flex gap-4">
+          <Link
+            to="/expenses/2024/12/1"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            View Expense Details
+          </Link>
           <Link
             to="/goals"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

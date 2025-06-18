@@ -12,7 +12,6 @@ export default function ExpenseDetail() {
   const [error, setError] = useState('');
   const [newExpense, setNewExpense] = useState({
     amount: '',
-    description: '',
   });
 
   const year = Number(searchParams.get('year')) || new Date().getFullYear();
@@ -27,8 +26,9 @@ export default function ExpenseDetail() {
           expensesService.getDetail(year, month, Number(categoryId)),
           expensesService.getCategories(),
         ]);
-        setExpenses(expensesData.result);
+        setExpenses(Array.isArray(expensesData) ? expensesData.slice(0, 10) : []);
         setCategories(categoriesData.result);
+        setError('');
       } catch (err) {
         setError('Failed to load expenses. Please try again.');
       } finally {
@@ -43,14 +43,19 @@ export default function ExpenseDetail() {
     e.preventDefault();
     try {
       setError('');
-      const response = await expensesService.createExpense({
+      const expense = await expensesService.createExpense({
         amount: Number(newExpense.amount),
-        description: newExpense.description,
         date: new Date().toISOString(),
         categoryId: Number(categoryId),
       });
-      setExpenses([...expenses, response.result]);
-      setNewExpense({ amount: '', description: '' });
+      const newExpenseObj: Expense = {
+        id: expense.id,
+        date: expense.date,
+        category: expense.category,
+        amount: expense.amount
+      };
+      setExpenses([newExpenseObj, ...expenses.slice(0, 9)]);
+      setNewExpense({ amount: '' });
     } catch (err) {
       setError('Failed to add expense. Please try again.');
     }
@@ -90,12 +95,43 @@ export default function ExpenseDetail() {
             <h1 className="text-3xl font-bold text-gray-900">
               {categoryName} Expenses
             </h1>
-            <p className="text-gray-500 mt-1">
-              {new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={() => {
+                  const prevMonth = month === 1 ? 12 : month - 1;
+                  const prevYear = month === 1 ? year - 1 : year;
+                  if (prevYear >= new Date().getFullYear() - 25) {
+                    window.location.search = `?year=${prevYear}&month=${prevMonth}`;
+                  }
+                }}
+                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                title="Previous month"
+              >
+                ◀
+              </button>
+              <span className="text-gray-500">
+                {new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+              <button
+                onClick={() => {
+                  const nextMonth = month === 12 ? 1 : month + 1;
+                  const nextYear = month === 12 ? year + 1 : year;
+                  if (nextYear <= new Date().getFullYear() + 25) {
+                    window.location.search = `?year=${nextYear}&month=${nextMonth}`;
+                  }
+                }}
+                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                title="Next month"
+              >
+                ▶
+              </button>
+            </div>
+            <p className="text-sm text-gray-400 mt-1">
+              Showing first 10 expenses
             </p>
           </div>
           <Link
-            to="/"
+            to="/dashboard"
             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Back to Dashboard
@@ -123,20 +159,7 @@ export default function ExpenseDetail() {
                 step="0.01"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 value={newExpense.amount}
-                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <input
-                type="text"
-                id="description"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                value={newExpense.description}
-                onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                onChange={(e) => setNewExpense({ amount: e.target.value })}
               />
             </div>
             <button
@@ -156,7 +179,7 @@ export default function ExpenseDetail() {
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
+                  Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
@@ -180,7 +203,7 @@ export default function ExpenseDetail() {
                       {new Date(expense.date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {expense.description}
+                      {expense.category.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       S/ {expense.amount.toFixed(2)}
@@ -198,6 +221,25 @@ export default function ExpenseDetail() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Debug section - Raw API data */}
+        <div className="mt-8 bg-gray-800 text-white p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4">Debug: Raw API Data (Expense Details)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-md font-medium mb-2">Expenses Data:</h4>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(expenses, null, 2)}
+              </pre>
+            </div>
+            <div>
+              <h4 className="text-md font-medium mb-2">Categories Data:</h4>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(categories, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>
